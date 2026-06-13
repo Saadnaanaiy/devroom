@@ -3,6 +3,8 @@ import axios from 'axios';
 
 // Set base URL for all API requests (VITE_API_URL or Vite proxy fallback)
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
+// Bypass ngrok browser warning
+axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true';
 
 const AuthContext = createContext();
 
