@@ -21,9 +21,10 @@ def create_database_if_not_exists():
     db_name = Config.DB_NAME
     
     server_uri = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/"
+    engine_kwargs = {'connect_args': {'ssl': {'ssl_ca': '/etc/ssl/certs/ca-certificates.crt'}}} if Config.DB_SSL else {}
     
     try:
-        engine = create_engine(server_uri)
+        engine = create_engine(server_uri, **engine_kwargs)
         with engine.connect() as conn:
             conn.execute(text("CREATE DATABASE IF NOT EXISTS `{}`".format(db_name.replace('`', '``'))))
             conn.commit()

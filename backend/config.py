@@ -17,15 +17,21 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)  # Reduced from 7 days
     ADMIN_SECRET_KEY = os.environ.get('ADMIN_SECRET_KEY', _default_admin)
     
-    # Database configuration (MySQL on XAMPP)
+    # Database configuration
     DB_USER = os.environ.get('DB_USER', 'root')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_PORT = os.environ.get('DB_PORT', '3306')
     DB_NAME = os.environ.get('DB_NAME', 'devroom')
+    DB_SSL = os.environ.get('DB_SSL', 'false').lower() == 'true'
     
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'connect_args': {
+            'ssl': {'ssl_ca': '/etc/ssl/certs/ca-certificates.crt'}
+        }
+    } if DB_SSL else {}
     
     # Email configuration (Brevo API)
     BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
