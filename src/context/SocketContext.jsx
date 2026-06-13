@@ -22,11 +22,12 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Connect to socket server
-    // Since proxy is configured, we can connect to the same origin
-    const newSocket = io({
+    const serverUrl = import.meta.env.VITE_API_URL || '';
+    const newSocket = io(serverUrl, {
       auth: { token },
       autoConnect: true,
       reconnectionAttempts: 5,
+      transports: ['websocket', 'polling'],
     });
 
     newSocket.on('connect', () => {

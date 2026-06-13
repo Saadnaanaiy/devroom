@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Set base URL for all API requests (VITE_API_URL or Vite proxy fallback)
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {

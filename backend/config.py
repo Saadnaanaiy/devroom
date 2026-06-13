@@ -31,8 +31,11 @@ class Config:
     BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@devroom.app')
     
-    # Frontend URL for email links
-    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+    # Frontend URL(s) for email links and CORS
+    # Comma-separated: first URL is primary (used in emails), all are allowed for CORS
+    _raw_frontend = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+    FRONTEND_URL = _raw_frontend.split(',')[0].strip().rstrip('/')
+    CORS_ORIGINS = [o.strip().rstrip('/') for o in _raw_frontend.split(',') if o.strip()]
     
     # Upload limits and paths
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')

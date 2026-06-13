@@ -9,8 +9,8 @@ from backend.app.models import db
 from backend.app.security import add_security_headers
 
 # Initialize extensions
-FRONTEND_URL = Config.FRONTEND_URL.rstrip('/')
-socketio = SocketIO(cors_allowed_origins=FRONTEND_URL)
+cors_origins = Config.CORS_ORIGINS if Config.CORS_ORIGINS else ['http://localhost:5173']
+socketio = SocketIO(cors_allowed_origins=cors_origins)
 
 def create_database_if_not_exists():
     """Auto-detects and creates the MySQL database if it does not exist."""
@@ -39,9 +39,9 @@ def create_app():
     app.config.from_object(Config)
     app.config['BASE_DIR'] = BASE_DIR
     
-    # Configure CORS — allow only the frontend origin
-    allowed_origin = FRONTEND_URL
-    CORS(app, resources={r"/api/*": {"origins": allowed_origin}}, supports_credentials=True)
+    # Configure CORS — allow frontend origins (comma-separated in env)
+    CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
+    app.config['FRONTEND_URL'] = Config.FRONTEND_URL
     
     # Security headers on all responses
     app.after_request(add_security_headers)
