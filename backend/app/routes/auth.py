@@ -51,7 +51,7 @@ def generate_token(user):
     return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm="HS256")
 
 @auth_bp.route('/register', methods=['POST'])
-@rate_limit(requests=3, window=300)
+@rate_limit(requests=20, window=300)
 def register():
     is_multipart = request.content_type and 'multipart/form-data' in request.content_type
     

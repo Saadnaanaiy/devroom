@@ -29,13 +29,14 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'connect_args': {
-            'ssl': {'ssl_ca': '/etc/ssl/certs/ca-certificates.crt'}
+            'ssl': {'ssl_ca': os.environ.get('DB_SSL_CA', '/etc/ssl/certs/ca-certificates.crt')}
         }
     } if DB_SSL else {}
     
-    # Email configuration (Brevo API)
-    BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+    # Email configuration (Resend)
+    RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@devroom.app')
+    DEV_EMAIL_OVERRIDE = os.environ.get('DEV_EMAIL_OVERRIDE', '')  # in dev, redirect all emails here
     
     # Frontend URL(s) for email links and CORS
     # Comma-separated: first URL is primary (used in emails), all are allowed for CORS

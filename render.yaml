@@ -30,3 +30,7 @@ services:
         sync: false
       - key: MAIL_DEFAULT_SENDER
         sync: false
+      - key: DB_SSL
+        value: "true"
+      - key: DB_SSL_CA
+        value: "/etc/ssl/certs/ca-certificates.crt"

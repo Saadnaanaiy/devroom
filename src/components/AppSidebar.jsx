@@ -19,6 +19,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
+
 const navItems = [
   { name: 'Chat Room', path: '/chat', icon: MessageSquare },
   { name: 'Dev Rooms', path: '/devrooms', icon: Code },
@@ -35,6 +36,7 @@ const AppSidebar = ({ defaultCollapsed }) => {
   const [collapsed, setCollapsed] = useState(defaultCollapsed || false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileClosing, setProfileClosing] = useState(false);
+
   const profileRef = useRef(null);
 
   const activePath = location.pathname;
@@ -246,6 +248,8 @@ const AppSidebar = ({ defaultCollapsed }) => {
           )}
         </div>
       </div>
+
+
     </div>
   );
 };

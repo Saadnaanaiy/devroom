@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from backend.app.models import db, DevRoom, ActivityLog
 from backend.app.routes.auth import token_required
+from backend.app.security import validate_length
 
 devrooms_bp = Blueprint('devrooms', __name__)
 
@@ -17,6 +18,16 @@ def create_dev_room(current_user):
     name = data.get('name')
     if not name:
         return jsonify({'message': 'Room name is required'}), 400
+
+    description = data.get('description', '')
+    github_url = data.get('github_url', '')
+
+    for field, label, maxlen in [
+        (name, 'Room name', 120), (description, 'Description', 2000), (github_url, 'GitHub URL', 500)
+    ]:
+        err = validate_length(field, label, maxlen)
+        if err:
+            return jsonify({'message': err}), 400
 
     room = DevRoom(
         name=name,

@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useSocket } from '../context/SocketContext';
 import { PenSquare, Eye, UploadCloud, Edit, Trash2, Plus, Check, BookOpen, X, AlertCircle, Users, MessageSquare, Hash, Code, Activity, ExternalLink, GitBranch, Globe, Calendar, LogIn, UserPlus, MessageCircle, Layout, TrendingUp, BarChart3, Clock, Save, UserCheck, UserX, Shield, ShieldOff } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import AdminConsole from './AdminConsole';
 
 const COLORS = ['#737373', '#a3a3a3', '#525252', '#404040', '#808080', '#595959'];
 
@@ -515,7 +516,7 @@ const AdminBlogs = () => {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-          {['overview', 'rooms', 'blogs', 'users', 'channels'].map((tab) => (
+          {['overview', 'rooms', 'blogs', 'users', 'channels', 'terminal'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -528,6 +529,7 @@ const AdminBlogs = () => {
               {tab === 'blogs' && 'Blog Management'}
               {tab === 'users' && 'Users'}
               {tab === 'channels' && 'Channels'}
+              {tab === 'terminal' && 'Terminal'}
             </button>
           ))}
         </div>
@@ -537,6 +539,11 @@ const AdminBlogs = () => {
         {activeTab === 'blogs' && renderBlogsTab()}
         {activeTab === 'users' && renderUsersTab()}
         {activeTab === 'channels' && renderChannelsTab()}
+        {activeTab === 'terminal' && (
+          <div className="h-[600px] rounded-2xl overflow-hidden border border-white/20 dark:border-gray-800/60">
+            <AdminConsole />
+          </div>
+        )}
       </div>
       <ConfirmDialog
         open={confirm.open}

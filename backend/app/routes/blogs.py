@@ -98,7 +98,7 @@ def create_blog(current_user):
         return jsonify({'message': 'Missing required fields (title, summary, content)'}), 400
 
     for field, name, maxlen in [
-        (title, 'Title', 255), (summary, 'Summary', 1000), (category, 'Category', 80)
+        (title, 'Title', 255), (summary, 'Summary', 1000), (content, 'Content', 100000), (category, 'Category', 80)
     ]:
         err = validate_length(field, name, maxlen)
         if err:

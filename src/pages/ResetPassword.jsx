@@ -20,8 +20,24 @@ const ResetPassword = () => {
       setError('Please fill in all fields.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must include an uppercase letter.');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError('Password must include a lowercase letter.');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('Password must include a number.');
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>_\-]/.test(password)) {
+      setError('Password must include a special character.');
       return;
     }
     if (password !== confirmPassword) {

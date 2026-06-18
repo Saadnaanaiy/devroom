@@ -1,55 +1,36 @@
-import json
-import urllib.request
-import urllib.error
+import resend
 from backend.config import Config
 
-BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+resend.api_key = Config.RESEND_API_KEY
 
 
 def send_email(to_email, subject, html_body, text_body=None, recipient_name=None):
-    if not Config.BREVO_API_KEY:
-        print(f"[DEV] Email not sent (no Brevo API key). Would send to {to_email}:")
+    if not Config.RESEND_API_KEY:
+        print(f"[DEV] Email not sent (no Resend API key). Would send to {to_email}:")
         print(f"[DEV] Subject: {subject}")
         print(f"[DEV] Body: {html_body[:200]}...")
-        return False, "No Brevo API key configured"
+        return False, "No Resend API key configured"
 
-    to_entry = {"email": to_email}
-    if recipient_name:
-        to_entry["name"] = recipient_name
+    actual_recipient = Config.DEV_EMAIL_OVERRIDE or to_email
+    if Config.DEV_EMAIL_OVERRIDE:
+        print(f"[DEV] Redirecting email from {to_email} to {Config.DEV_EMAIL_OVERRIDE}")
 
-    payload = {
-        "sender": {"email": Config.MAIL_DEFAULT_SENDER, "name": "DevRoom"},
-        "to": [to_entry],
+    params = {
+        "from": Config.MAIL_DEFAULT_SENDER,
+        "to": actual_recipient,
         "subject": subject,
-        "htmlContent": html_body,
+        "html": html_body,
     }
     if text_body:
-        payload["textContent"] = text_body
-
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        BREVO_API_URL,
-        data=data,
-        headers={
-            "api-key": Config.BREVO_API_KEY,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-        method="POST",
-    )
+        params["text"] = text_body
 
     try:
-        with urllib.request.urlopen(req) as resp:
-            resp_body = resp.read().decode("utf-8", errors="replace")
-            print(f"[EMAIL] Sent to {to_email} — {resp.status}: {resp_body[:200]}")
-            return True, None
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")
-        print(f"[!] Brevo API error {e.code}: {body}")
-        return False, f"Brevo API error {e.code}: {body}"
-    except urllib.error.URLError as e:
-        print(f"[!] Brevo API connection error: {e.reason}")
-        return False, f"Brevo connection error: {e.reason}"
+        r = resend.Emails.send(params)
+        print(f"[EMAIL] Sent to {to_email} — {r.get('id')}")
+        return True, None
+    except Exception as e:
+        print(f"[!] Resend API error: {e}")
+        return False, str(e)
 
 
 def send_verification_email(to_email, username, token):

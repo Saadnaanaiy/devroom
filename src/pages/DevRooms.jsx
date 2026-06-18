@@ -10,6 +10,16 @@ const ICE_SERVERS = {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
   iceCandidatePoolSize: 10,
 };
@@ -122,6 +132,9 @@ const DevRooms = () => {
           delete peerConnectionsRef.current[viewerId];
         }
       };
+      pc.onicecandidateerror = (e) => {
+        console.error('ICE candidate error (broadcaster):', e.errorText, e.url);
+      };
 
       pc.onicecandidate = (event) => {
         if (event.candidate && socket && selectedRoomRef.current) {
@@ -231,7 +244,12 @@ const DevRooms = () => {
           else setConnectionQuality('connecting');
           if (state === 'connected' || state === 'completed') {
             console.log('WebRTC connected as viewer');
+          } else if (state === 'failed') {
+            console.error('WebRTC viewer connection FAILED — check ICE servers and network');
           }
+        };
+        peer.onicecandidateerror = (e) => {
+          console.error('ICE candidate error (viewer):', e.errorText, e.url);
         };
 
         peer.onicecandidate = (event) => {

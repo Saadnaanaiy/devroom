@@ -7,4 +7,6 @@ cryptography==42.0.8
 pyjwt==2.8.0
 python-dotenv==1.0.1
 gunicorn==23.0.0
-eventlet==0.36.1
+eventlet==0.41.0
+resend==2.32.2
+openai==1.68.2
