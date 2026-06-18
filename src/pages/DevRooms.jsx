@@ -5,21 +5,11 @@ import { useSocket } from '../context/SocketContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Plus, ExternalLink, Trash2, GitBranch, Code, Globe, Calendar, X, Users, Monitor, MonitorOff, Video, VideoOff, ArrowLeft, User, Wifi, WifiOff, Maximize, Minimize, Mic, MicOff, Camera, CameraOff, Signal, SignalHigh, SignalMedium, SignalLow } from 'lucide-react';
 
-const ICE_SERVERS = {
+const DEFAULT_ICE = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
   ],
   iceCandidatePoolSize: 10,
 };
@@ -65,6 +55,8 @@ const DevRooms = () => {
   const [streamSource, setStreamSource] = useState('screen');
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [connectionQuality, setConnectionQuality] = useState(null);
+  const [iceServers, setIceServers] = useState(DEFAULT_ICE);
+  const iceServersRef = useRef(DEFAULT_ICE);
 
   const toggleFullscreen = async () => {
     const el = fullscreenRef.current;
@@ -108,6 +100,13 @@ const DevRooms = () => {
     };
   }, []);
 
+  // Fetch TURN/ICE config from backend at mount
+  useEffect(() => {
+    axios.get('/api/config/webrtc')
+      .then(res => { setIceServers(res.data); iceServersRef.current = res.data; })
+      .catch(() => {/* fall back to default STUN only */});
+  }, []);
+
   const createPCForViewer = useCallback(async (viewerId) => {
     if (!localStreamRef.current) return null;
     try {
@@ -115,7 +114,7 @@ const DevRooms = () => {
       if (peerConnectionsRef.current[viewerId]) {
         peerConnectionsRef.current[viewerId].close();
       }
-      const pc = new RTCPeerConnection(ICE_SERVERS);
+      const pc = new RTCPeerConnection(iceServersRef.current);
       peerConnectionsRef.current[viewerId] = pc;
 
       localStreamRef.current.getTracks().forEach(track => {
@@ -214,7 +213,7 @@ const DevRooms = () => {
         // Close previous peer connection if any
         if (peerRef.current) peerRef.current.close();
         setHasRemoteVideo(false);
-        const peer = new RTCPeerConnection(ICE_SERVERS);
+        const peer = new RTCPeerConnection(iceServersRef.current);
         peerRef.current = peer;
 
         peer.ontrack = (event) => {
