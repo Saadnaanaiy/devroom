@@ -5,20 +5,38 @@ import { useSocket } from '../context/SocketContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Plus, ExternalLink, Trash2, GitBranch, Code, Globe, Calendar, X, Users, Monitor, MonitorOff, Video, VideoOff, ArrowLeft, User, Wifi, WifiOff, Maximize, Minimize, Mic, MicOff, Camera, CameraOff, Signal, SignalHigh, SignalMedium, SignalLow } from 'lucide-react';
 
-const ICE_SERVERS = {
+// Metered.ca TURN credentials — fetched via REST API for fresh time-limited tokens
+const TURN_API_KEY = '9d9520343ae0cd35f465ac329f5bfd8a4e5a';
+const TURN_API_URL = 'https://devroom.metered.live/api/v1/turn/credentials';
+
+const STUN_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+];
+
+const FALLBACK_ICE = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
+    ...STUN_SERVERS,
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: 'turn:global.relay.metered.ca:80',
+      username: '597a69ba53168c57effc61d1',
+      credential: '8fRZeqDDpFHRWujD',
     },
     {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+      username: '597a69ba53168c57effc61d1',
+      credential: '8fRZeqDDpFHRWujD',
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:443',
+      username: '597a69ba53168c57effc61d1',
+      credential: '8fRZeqDDpFHRWujD',
+    },
+    {
+      urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+      username: '597a69ba53168c57effc61d1',
+      credential: '8fRZeqDDpFHRWujD',
     },
   ],
   iceCandidatePoolSize: 10,
@@ -65,6 +83,8 @@ const DevRooms = () => {
   const [streamSource, setStreamSource] = useState('screen');
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [connectionQuality, setConnectionQuality] = useState(null);
+  const [iceServers, setIceServers] = useState(FALLBACK_ICE);
+  const iceServersRef = useRef(FALLBACK_ICE);
 
   const toggleFullscreen = async () => {
     const el = fullscreenRef.current;
@@ -108,6 +128,18 @@ const DevRooms = () => {
     };
   }, []);
 
+  // Fetch fresh TURN credentials from Metered.ca
+  useEffect(() => {
+    fetch(`${TURN_API_URL}?apiKey=${TURN_API_KEY}`)
+      .then(r => r.json())
+      .then(servers => {
+        const ices = { iceServers: [...STUN_SERVERS, ...servers], iceCandidatePoolSize: 10 };
+        setIceServers(ices);
+        iceServersRef.current = ices;
+      })
+      .catch(() => {/* uses fallback */});
+  }, []);
+
   const createPCForViewer = useCallback(async (viewerId) => {
     if (!localStreamRef.current) return null;
     try {
@@ -115,7 +147,7 @@ const DevRooms = () => {
       if (peerConnectionsRef.current[viewerId]) {
         peerConnectionsRef.current[viewerId].close();
       }
-      const pc = new RTCPeerConnection(ICE_SERVERS);
+      const pc = new RTCPeerConnection(iceServersRef.current);
       peerConnectionsRef.current[viewerId] = pc;
 
       localStreamRef.current.getTracks().forEach(track => {
@@ -214,7 +246,7 @@ const DevRooms = () => {
         // Close previous peer connection if any
         if (peerRef.current) peerRef.current.close();
         setHasRemoteVideo(false);
-        const peer = new RTCPeerConnection(ICE_SERVERS);
+        const peer = new RTCPeerConnection(iceServersRef.current);
         peerRef.current = peer;
 
         peer.ontrack = (event) => {
