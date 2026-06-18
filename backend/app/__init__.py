@@ -67,26 +67,6 @@ def create_app():
     app.register_blueprint(devrooms_bp, url_prefix='/api/devrooms')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     
-    # WebRTC / TURN config endpoint (used by frontend for screen sharing)
-    @app.route('/api/config/webrtc')
-    def webrtc_config():
-        turn_user = os.environ.get('TURN_USER', '')
-        turn_pass = os.environ.get('TURN_PASSWORD', '')
-        turn_host = os.environ.get('TURN_HOST', '')
-        turn_port = os.environ.get('TURN_PORT', '3478')
-        ice_servers = [
-            {'urls': 'stun:stun.l.google.com:19302'},
-            {'urls': 'stun:stun1.l.google.com:19302'},
-            {'urls': 'stun:stun2.l.google.com:19302'},
-        ]
-        if turn_user and turn_pass and turn_host:
-            ice_servers.append({
-                'urls': f'turn:{turn_host}:{turn_port}',
-                'username': turn_user,
-                'credential': turn_pass,
-            })
-        return {'iceServers': ice_servers, 'iceCandidatePoolSize': 10}
-
     # Register WebSocket Event Listeners
     from backend.app.sockets import init_socket_events
     init_socket_events(socketio)
