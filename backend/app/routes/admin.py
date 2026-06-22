@@ -218,3 +218,16 @@ def verify_user(current_user, user_id):
     db.session.add(log)
     db.session.commit()
     return jsonify({'message': 'User verified successfully', 'user': user.to_dict()}), 200
+
+@admin_bp.route('/messages', methods=['DELETE'])
+@token_required
+def clear_all_messages(current_user):
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin only'}), 403
+    try:
+        Message.query.delete()
+        db.session.commit()
+        return jsonify({'message': 'All messages cleared'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500

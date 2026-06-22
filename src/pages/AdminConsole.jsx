@@ -80,6 +80,7 @@ const CMD_HELP = (theme) => `Available commands:
   room edit <id>                Edit room (interactive)
   room delete <id>              Delete room
   mkroom                        Create a new dev room (interactive)
+  clearmessages                 Clear ALL messages (admin only)
   blogs                         List all blogs
   blog <id>                     View blog details
   blog edit <id>                Edit blog (interactive)
@@ -479,6 +480,15 @@ const AdminConsole = () => {
     }
   }, [addLine, fetchChannels]);
 
+  const handleClearmessages = useCallback(async () => {
+    try {
+      await axios.delete('/api/admin/messages');
+      addLine('All messages cleared.', 'success');
+    } catch (err) {
+      addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
+    }
+  }, [addLine]);
+
   const handleMkroom = useCallback(() => {
     const fields = [
       { key: 'name', label: 'Room Name', default: '' },
@@ -585,10 +595,13 @@ const AdminConsole = () => {
       case 'mkroom':
         handleMkroom();
         break;
+      case 'clearmessages':
+        await handleClearmessages();
+        break;
       default:
         addLine(`Command not found: ${cmd}. Type "help" for available commands.`, 'error');
     }
-  }, [addLine, addLines, theme, handleStats, handleUsers, handleUserDetail, handleUserVerify, handleUserDelete, handleUserEditStart, handleRooms, handleRoomDetail, handleRoomDelete, handleRoomEditStart, handleBlogs, handleBlogDetail, handleBlogDelete, handleBlogEditStart, handleChannels, handleMkuser, handleMkchannel, handleMkroom]);
+  }, [addLine, addLines, theme, handleStats, handleUsers, handleUserDetail, handleUserVerify, handleUserDelete, handleUserEditStart, handleRooms, handleRoomDetail, handleRoomDelete, handleRoomEditStart, handleBlogs, handleBlogDetail, handleBlogDelete, handleBlogEditStart, handleChannels, handleMkuser, handleMkchannel, handleMkroom, handleClearmessages]);
 
   const handleSaveEdit = useCallback(async () => {
     const { type, id, fields } = editing;
