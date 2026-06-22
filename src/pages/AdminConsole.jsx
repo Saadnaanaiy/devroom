@@ -74,15 +74,18 @@ const CMD_HELP = (theme) => `Available commands:
   user edit <id>                Edit user (interactive)
   user verify <id>              Verify user's email
   user delete <id>              Delete user
+  mkuser                        Create a new user (interactive)
   rooms                         List all dev rooms
   room <id>                     View room details
   room edit <id>                Edit room (interactive)
   room delete <id>              Delete room
+  mkroom <name>                 Create a new dev room
   blogs                         List all blogs
   blog <id>                     View blog details
   blog edit <id>                Edit blog (interactive)
   blog delete <id>              Delete blog
   channels                      List all chat channels
+  mkchannel <name>              Create a new chat channel
   theme [name]                  Show or change color theme
                                  Available: ${Object.keys(THEMES).join(', ')}`;
 
@@ -180,23 +183,50 @@ const AdminConsole = () => {
     try {
       const res = await axios.get('/api/admin/stats');
       const s = res.data.stats;
-      const items = [
-        { label: 'Users', value: s.total_users, type: 'success' },
-        { label: 'Dev Rooms', value: s.total_dev_rooms, type: 'system' },
-        { label: 'Messages', value: s.total_messages, type: 'input' },
-        { label: 'Channels', value: s.total_channels, type: 'live' },
+      const groups = [
+        {
+          header: 'Users & Content',
+          items: [
+            { label: 'Users', value: s.total_users, type: 'success' },
+            { label: 'Blogs', value: s.total_blogs, type: 'input' },
+            { label: 'Comments', value: s.total_comments, type: 'live' },
+            { label: 'Likes', value: s.total_likes, type: 'system' },
+            { label: 'Saved Blogs', value: s.total_saved_blogs, type: 'text' },
+            { label: 'Ratings', value: s.total_ratings, type: 'input' },
+          ],
+        },
+        {
+          header: 'Chat & Rooms',
+          items: [
+            { label: 'Channels', value: s.total_channels, type: 'live' },
+            { label: 'Dev Rooms', value: s.total_dev_rooms, type: 'success' },
+            { label: 'Messages', value: s.total_messages, type: 'input' },
+            { label: 'Chat Members', value: s.total_chat_members, type: 'system' },
+          ],
+        },
+        {
+          header: 'Activity',
+          items: [
+            { label: 'Activity Logs', value: s.total_activity_logs, type: 'text' },
+          ],
+        },
       ];
-      const maxVal = Math.max(...items.map((i) => i.value), 1);
-      const barLen = 24;
-      addLine('\u2500'.repeat(40), 'system');
-      const lines = items.map(({ label, value, type }) => {
-        const filled = Math.round((value / maxVal) * barLen);
-        const empty = barLen - filled;
-        const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(empty);
-        const pct = Math.round((value / maxVal) * 100);
-        return { text: `  ${label.padEnd(12)} ${String(value).padStart(6)}  ${bar}  ${pct}%`, type };
+      const allItems = groups.flatMap((g) => g.items);
+      const maxVal = Math.max(...allItems.map((i) => i.value), 1);
+      const barLen = 20;
+      groups.forEach(({ header, items }) => {
+        addLine('', 'text');
+        addLine(`  ${header}`, 'system');
+        addLine(`  ${'\u2500'.repeat(36)}`, 'text');
+        items.forEach(({ label, value, type }) => {
+          const filled = Math.round((value / maxVal) * barLen);
+          const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(Math.max(barLen - filled, 0));
+          const pct = Math.round((value / maxVal) * 100);
+          addLine(`  ${label.padEnd(14)} ${String(value).padStart(6)}  ${bar}  ${pct}%`, type);
+        });
       });
-      lines.forEach((l) => addLine(l.text, l.type));
+      addLine('', 'text');
+      addLine(`  Total items: ${allItems.reduce((s, i) => s + i.value, 0)}`, 'success');
     } catch (err) {
       addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
     }
@@ -420,6 +450,43 @@ const AdminConsole = () => {
     ], 'text');
   }, [fetchChannels, addLine, addLines]);
 
+  const handleMkuser = useCallback(() => {
+    const fields = [
+      { key: 'username', label: 'Username', default: '' },
+      { key: 'email', label: 'Email', default: '' },
+      { key: 'password', label: 'Password', default: '' },
+      { key: 'first_name', label: 'First Name', default: '' },
+      { key: 'last_name', label: 'Last Name', default: '' },
+    ];
+    setEditKeys(fields);
+    setEditIdx(0);
+    setEditFields(fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {}));
+    setEditing({ type: 'user', id: null, fields, total: fields.length });
+    setEditStep(1);
+    addLine('Creating new user. Enter values (required fields):', 'system');
+    addLine(`  ${fields[0].label} [${fields[0].default}]:`, 'input');
+  }, [addLine]);
+
+  const handleMkchannel = useCallback(async (name) => {
+    try {
+      await axios.post('/api/chat/rooms', { name });
+      addLine(`Channel "#${name}" created.`, 'success');
+      const channels = await fetchChannels();
+      if (channels) setAllData((prev) => ({ ...prev, channels }));
+    } catch (err) {
+      addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
+    }
+  }, [addLine, fetchChannels]);
+
+  const handleMkroom = useCallback(async (name) => {
+    try {
+      const res = await axios.post('/api/devrooms', { name });
+      addLine(`Room "${name}" created (ID: ${res.data.room?.id || res.data.id}).`, 'success');
+    } catch (err) {
+      addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
+    }
+  }, [addLine]);
+
   const executeCommand = useCallback(async (cmdLine) => {
     const trimmed = cmdLine.trim();
     if (!trimmed) return;
@@ -498,40 +565,65 @@ const AdminConsole = () => {
       case 'channels':
         await handleChannels();
         break;
+      case 'mkuser':
+        handleMkuser();
+        break;
+      case 'mkchannel':
+        if (!args[0]) {
+          addLine('Usage: mkchannel <name>', 'system');
+        } else {
+          await handleMkchannel(args[0]);
+        }
+        break;
+      case 'mkroom':
+        if (!args[0]) {
+          addLine('Usage: mkroom <name>', 'system');
+        } else {
+          await handleMkroom(args[0]);
+        }
+        break;
       default:
         addLine(`Command not found: ${cmd}. Type "help" for available commands.`, 'error');
     }
-  }, [addLine, addLines, theme, handleStats, handleUsers, handleUserDetail, handleUserVerify, handleUserDelete, handleUserEditStart, handleRooms, handleRoomDetail, handleRoomDelete, handleRoomEditStart, handleBlogs, handleBlogDetail, handleBlogDelete, handleBlogEditStart, handleChannels]);
+  }, [addLine, addLines, theme, handleStats, handleUsers, handleUserDetail, handleUserVerify, handleUserDelete, handleUserEditStart, handleRooms, handleRoomDetail, handleRoomDelete, handleRoomEditStart, handleBlogs, handleBlogDetail, handleBlogDelete, handleBlogEditStart, handleChannels, handleMkuser, handleMkchannel, handleMkroom]);
 
   const handleSaveEdit = useCallback(async () => {
     const { type, id, fields } = editing;
     try {
-      if (type === 'user') {
+      if (type === 'user' && id === null) {
+        const res = await axios.post('/api/auth/register', editFields);
+        const newUser = res.data.user || res.data;
+        addLine(`User "${newUser.username}" created (ID: ${newUser.id}).`, 'success');
+        const users = await fetchUsers();
+        if (users) setAllData((prev) => ({ ...prev, users }));
+      } else if (type === 'user') {
         const res = await axios.put(`/api/admin/users/${id}`, editFields);
         setAllData((prev) => ({
           ...prev,
           users: prev.users.map((u) => (u.id === id ? res.data : u)),
         }));
+        addLine(`User #${id} updated.`, 'success');
       } else if (type === 'room') {
         const res = await axios.put(`/api/devrooms/${id}`, editFields);
         setAllData((prev) => ({
           ...prev,
           rooms: prev.rooms.map((r) => (r.id === id ? res.data : r)),
         }));
+        addLine(`Room #${id} updated.`, 'success');
       } else if (type === 'blog') {
         const res = await axios.put(`/api/blogs/${id}`, editFields);
         setAllData((prev) => ({
           ...prev,
           blogs: prev.blogs.map((b) => (b.id === id ? res.data.blog : b)),
         }));
+        addLine(`Blog #${id} updated.`, 'success');
       }
-      addLine(`${type.charAt(0).toUpperCase() + type.slice(1)} #${id} updated.`, 'success');
     } catch (err) {
       addLine(`Error saving: ${err.response?.data?.message || err.message}`, 'error');
     }
     setEditing(null);
     setEditStep(0);
-  }, [editing, editFields, addLine]);
+  }, [editing, editFields, addLine, fetchUsers]);
 
   const handleKeyDown = (e) => {
     if (editing) {

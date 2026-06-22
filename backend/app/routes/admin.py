@@ -16,6 +16,13 @@ def get_admin_stats(current_user):
     total_dev_rooms = DevRoom.query.count()
     total_messages = Message.query.count()
     total_channels = ChatRoom.query.filter_by(type='channel').count()
+    total_blogs = Blog.query.count()
+    total_comments = Comment.query.count()
+    total_likes = Like.query.count()
+    total_saved_blogs = SavedBlog.query.count()
+    total_ratings = Rating.query.count()
+    total_activity_logs = ActivityLog.query.count()
+    total_chat_members = ChatRoomMember.query.count()
 
     # Recent dev rooms
     recent_rooms = DevRoom.query.order_by(DevRoom.created_at.desc()).limit(10).all()
@@ -28,7 +35,14 @@ def get_admin_stats(current_user):
             'total_users': total_users,
             'total_dev_rooms': total_dev_rooms,
             'total_messages': total_messages,
-            'total_channels': total_channels
+            'total_channels': total_channels,
+            'total_blogs': total_blogs,
+            'total_comments': total_comments,
+            'total_likes': total_likes,
+            'total_saved_blogs': total_saved_blogs,
+            'total_ratings': total_ratings,
+            'total_activity_logs': total_activity_logs,
+            'total_chat_members': total_chat_members
         },
         'recent_rooms': [r.to_dict() for r in recent_rooms],
         'recent_users': [u.to_dict() for u in recent_users]
