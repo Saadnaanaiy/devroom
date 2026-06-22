@@ -183,10 +183,24 @@ def delete_user(current_user, user_id):
         db.session.execute(text("SET FOREIGN_KEY_CHECKS=1"))
         DevRoom.query.filter_by(creator_id=user_id).delete()
         Blog.query.filter_by(author_id=user_id).delete()
-
         db.session.delete(user)
         db.session.commit()
         return jsonify({'message': 'User deleted'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': str(e)}), 500
+
+@admin_bp.route('/users/<int:user_id>/verify', methods=['POST'])
+@token_required
+def verify_user(current_user, user_id):
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin only'}), 403
+    user = User.query.get_or_404(user_id)
+    if user.is_verified:
+        return jsonify({'message': 'User already verified'}), 400
+    user.is_verified = True
+    db.session.commit()
+    log = ActivityLog(user_id=current_user.id, username=current_user.username, action='verify_user', details=f'Verified user #{user_id} ({user.email})')
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'message': 'User verified successfully', 'user': user.to_dict()}), 200

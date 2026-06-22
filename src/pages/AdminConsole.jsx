@@ -72,6 +72,7 @@ const CMD_HELP = (theme) => `Available commands:
   users                         List all users
   user <id>                     View user details
   user edit <id>                Edit user (interactive)
+  user verify <id>              Verify user's email
   user delete <id>              Delete user
   rooms                         List all dev rooms
   room <id>                     View room details
@@ -221,6 +222,19 @@ const AdminConsole = () => {
       `Created:   ${new Date(u.created_at).toLocaleString()}`,
     ], 'text');
   }, [fetchUsers, addLine, addLines]);
+
+  const handleUserVerify = useCallback(async (id) => {
+    try {
+      const res = await axios.post(`/api/admin/users/${id}/verify`);
+      addLine(`User #${id} verified.`, 'success');
+      setAllData((prev) => ({
+        ...prev,
+        users: prev.users.map((u) => (u.id === Number(id) ? res.data.user : u)),
+      }));
+    } catch (err) {
+      addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
+    }
+  }, [addLine]);
 
   const handleUserDelete = useCallback(async (id) => {
     try {
@@ -432,6 +446,8 @@ const AdminConsole = () => {
       case 'user':
         if (args.length === 0) {
           addLine('Usage: user <id> | user edit <id> | user delete <id>', 'system');
+        } else if (args[0] === 'verify' && args[1]) {
+          await handleUserVerify(args[1]);
         } else if (args[0] === 'delete' && args[1]) {
           await handleUserDelete(args[1]);
         } else if (args[0] === 'edit' && args[1]) {
@@ -474,7 +490,7 @@ const AdminConsole = () => {
       default:
         addLine(`Command not found: ${cmd}. Type "help" for available commands.`, 'error');
     }
-  }, [addLine, addLines, theme, handleStats, handleUsers, handleUserDetail, handleUserDelete, handleUserEditStart, handleRooms, handleRoomDetail, handleRoomDelete, handleRoomEditStart, handleBlogs, handleBlogDetail, handleBlogDelete, handleBlogEditStart, handleChannels]);
+  }, [addLine, addLines, theme, handleStats, handleUsers, handleUserDetail, handleUserVerify, handleUserDelete, handleUserEditStart, handleRooms, handleRoomDetail, handleRoomDelete, handleRoomEditStart, handleBlogs, handleBlogDetail, handleBlogDelete, handleBlogEditStart, handleChannels]);
 
   const handleSaveEdit = useCallback(async () => {
     const { type, id, fields } = editing;
