@@ -250,6 +250,15 @@ const AdminBlogs = () => {
     }
   };
 
+  const verifyUser = async (id) => {
+    try {
+      const res = await axios.post(`/api/admin/users/${id}/verify`);
+      setAllUsers((prev) => prev.map((u) => (u.id === id ? res.data.user : u)));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to verify user');
+    }
+  };
+
   const deleteUser = (id) => {
     setConfirm({ open: true, title: 'Delete User', message: 'Delete this user? This action cannot be undone.', pendingType: 'user', pendingId: id });
   };
@@ -435,6 +444,11 @@ const AdminBlogs = () => {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase ${u.role === 'admin' ? 'bg-gray-900/10 text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>{u.role}</span>
+            {u.is_verified ? (
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-semibold">Verified</span>
+            ) : (
+              <button onClick={() => verifyUser(u.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 font-semibold hover:bg-amber-200 transition-colors">Verify</button>
+            )}
             <button onClick={() => openEdit('user', u)} className="apple-btn apple-btn-icon p-1.5"><Edit size={14} /></button>
             <button onClick={() => deleteUser(u.id)} className="apple-btn apple-btn-icon apple-btn-danger p-1.5"><Trash2 size={14} /></button>
           </div>
