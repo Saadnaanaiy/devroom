@@ -79,7 +79,7 @@ const CMD_HELP = (theme) => `Available commands:
   room <id>                     View room details
   room edit <id>                Edit room (interactive)
   room delete <id>              Delete room
-  mkroom <name> [desc] [url]   Create a new dev room (description & github url optional)
+  mkroom                        Create a new dev room (interactive)
   blogs                         List all blogs
   blog <id>                     View blog details
   blog edit <id>                Edit blog (interactive)
@@ -479,13 +479,19 @@ const AdminConsole = () => {
     }
   }, [addLine, fetchChannels]);
 
-  const handleMkroom = useCallback(async (name, description = '', githubUrl = '') => {
-    try {
-      const res = await axios.post('/api/devrooms', { name, description, github_url: githubUrl });
-      addLine(`Room "${name}" created (ID: ${res.data.room?.id || res.data.id}).`, 'success');
-    } catch (err) {
-      addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
-    }
+  const handleMkroom = useCallback(() => {
+    const fields = [
+      { key: 'name', label: 'Room Name', default: '' },
+      { key: 'description', label: 'Description (optional)', default: '' },
+      { key: 'github_url', label: 'GitHub URL (optional)', default: '' },
+    ];
+    setEditKeys(fields);
+    setEditIdx(0);
+    setEditFields(fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {}));
+    setEditing({ type: 'room', id: null, fields, total: fields.length });
+    setEditStep(1);
+    addLine('Creating new dev room. Enter values:', 'system');
+    addLine(`  ${fields[0].label}:`, 'input');
   }, [addLine]);
 
   const executeCommand = useCallback(async (cmdLine) => {
@@ -577,11 +583,7 @@ const AdminConsole = () => {
         }
         break;
       case 'mkroom':
-        if (!args[0]) {
-          addLine('Usage: mkroom <name> [description] [github_url]', 'system');
-        } else {
-          await handleMkroom(args[0], args[1] || '', args[2] || '');
-        }
+        handleMkroom();
         break;
       default:
         addLine(`Command not found: ${cmd}. Type "help" for available commands.`, 'error');
@@ -604,6 +606,9 @@ const AdminConsole = () => {
           users: prev.users.map((u) => (u.id === id ? res.data : u)),
         }));
         addLine(`User #${id} updated.`, 'success');
+      } else if (type === 'room' && id === null) {
+        const res = await axios.post('/api/devrooms', editFields);
+        addLine(`Room "${editFields.name}" created (ID: ${res.data.room?.id || res.data.id}).`, 'success');
       } else if (type === 'room') {
         const res = await axios.put(`/api/devrooms/${id}`, editFields);
         setAllData((prev) => ({
