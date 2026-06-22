@@ -221,7 +221,7 @@ def delete_blog(current_user, blog_id):
 
         # Nullify parent_id on replies to any comment being deleted
         db.session.execute(
-            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM comments WHERE blog_id = :bid)"),
+            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE blog_id = :bid) AS tmp)"),
             {'bid': blog_id}
         )
 

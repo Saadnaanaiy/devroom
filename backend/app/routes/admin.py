@@ -158,7 +158,7 @@ def delete_user(current_user, user_id):
         if blog_ids:
             # Nullify parent_id on replies to comments on user's blogs
             db.session.execute(
-                text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM comments WHERE blog_id IN :bids)"),
+                text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE blog_id IN :bids) AS tmp)"),
                 {'bids': tuple(blog_ids)}
             )
             Comment.query.filter(Comment.blog_id.in_(blog_ids)).delete(synchronize_session=False)
@@ -168,7 +168,7 @@ def delete_user(current_user, user_id):
 
         # Nullify replies to user's comments
         db.session.execute(
-            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM comments WHERE user_id = :uid)"),
+            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE user_id = :uid) AS tmp)"),
             {'uid': user_id}
         )
 
