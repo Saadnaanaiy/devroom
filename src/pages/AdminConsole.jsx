@@ -631,9 +631,7 @@ const AdminConsole = () => {
       if (e.key === 'Enter') {
         const currentField = editKeys[editIdx];
         const val = e.target.value.trim();
-        if (val) {
-          setEditFields((prev) => ({ ...prev, [currentField.key]: val }));
-        }
+        setEditFields((prev) => ({ ...prev, [currentField.key]: val }));
         const nextIdx = editIdx + 1;
         if (editInputRef.current) editInputRef.current.value = '';
         if (nextIdx >= editKeys.length) {
