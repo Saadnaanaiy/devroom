@@ -151,6 +151,19 @@ def register():
         'user': new_user.to_dict()
     }), 201
 
+@auth_bp.route('/upgrade-admin', methods=['POST'])
+@token_required
+def upgrade_admin(current_user):
+    data = request.get_json() or {}
+    admin_key = data.get('admin_key', '')
+    if not admin_key or admin_key != Config.ADMIN_SECRET_KEY:
+        return jsonify({'message': 'Invalid admin key'}), 403
+    if current_user.role == 'admin':
+        return jsonify({'message': 'Already an admin'}), 400
+    current_user.role = 'admin'
+    db.session.commit()
+    return jsonify({'message': 'Upgraded to admin successfully', 'user': current_user.to_dict()}), 200
+
 @auth_bp.route('/login', methods=['POST'])
 @rate_limit(requests=10, window=60)
 def login():
