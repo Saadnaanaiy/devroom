@@ -79,7 +79,7 @@ const CMD_HELP = (theme) => `Available commands:
   room <id>                     View room details
   room edit <id>                Edit room (interactive)
   room delete <id>              Delete room
-  mkroom <name>                 Create a new dev room
+  mkroom <name> [desc] [url]   Create a new dev room (description & github url optional)
   blogs                         List all blogs
   blog <id>                     View blog details
   blog edit <id>                Edit blog (interactive)
@@ -479,9 +479,9 @@ const AdminConsole = () => {
     }
   }, [addLine, fetchChannels]);
 
-  const handleMkroom = useCallback(async (name) => {
+  const handleMkroom = useCallback(async (name, description = '', githubUrl = '') => {
     try {
-      const res = await axios.post('/api/devrooms', { name });
+      const res = await axios.post('/api/devrooms', { name, description, github_url: githubUrl });
       addLine(`Room "${name}" created (ID: ${res.data.room?.id || res.data.id}).`, 'success');
     } catch (err) {
       addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
@@ -578,9 +578,9 @@ const AdminConsole = () => {
         break;
       case 'mkroom':
         if (!args[0]) {
-          addLine('Usage: mkroom <name>', 'system');
+          addLine('Usage: mkroom <name> [description] [github_url]', 'system');
         } else {
-          await handleMkroom(args[0]);
+          await handleMkroom(args[0], args[1] || '', args[2] || '');
         }
         break;
       default:
