@@ -118,21 +118,31 @@ def update_user(current_user, user_id):
         return jsonify({'message': 'Admin only'}), 403
     user = User.query.get_or_404(user_id)
     data = request.get_json() or {}
-    if 'username' in data and data['username'].strip():
-        user.username = data['username'].strip()
-    if 'email' in data and data['email'].strip():
-        user.email = data['email'].strip()
-    if 'first_name' in data and data['first_name'].strip():
-        user.first_name = data['first_name'].strip()
-    if 'last_name' in data and data['last_name'].strip():
-        user.last_name = data['last_name'].strip()
-    if 'role' in data and data['role'] in ('admin', 'user'):
-        user.role = data['role']
-    db.session.commit()
-    log = ActivityLog(user_id=current_user.id, username=current_user.username, action='update_user', details=f'Updated user #{user_id}')
-    db.session.add(log)
-    db.session.commit()
-    return jsonify(user.to_dict()), 200
+    try:
+        if 'username' in data and data['username'].strip():
+            existing = User.query.filter(User.username == data['username'].strip(), User.id != user_id).first()
+            if existing:
+                return jsonify({'message': 'Username already taken'}), 409
+            user.username = data['username'].strip()
+        if 'email' in data and data['email'].strip():
+            existing = User.query.filter(User.email == data['email'].strip(), User.id != user_id).first()
+            if existing:
+                return jsonify({'message': 'Email already registered'}), 409
+            user.email = data['email'].strip()
+        if 'first_name' in data and data['first_name'].strip():
+            user.first_name = data['first_name'].strip()
+        if 'last_name' in data and data['last_name'].strip():
+            user.last_name = data['last_name'].strip()
+        if 'role' in data and data['role'] in ('admin', 'user'):
+            user.role = data['role']
+        db.session.commit()
+        log = ActivityLog(user_id=current_user.id, username=current_user.username, action='update_user', details=f'Updated user #{user_id}')
+        db.session.add(log)
+        db.session.commit()
+        return jsonify(user.to_dict()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Failed to update user: {str(e)}'}), 500
 
 @admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
 @token_required

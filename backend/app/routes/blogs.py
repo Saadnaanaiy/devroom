@@ -204,10 +204,9 @@ def update_blog(current_user, blog_id):
 @blogs_bp.route('/<int:blog_id>', methods=['DELETE'])
 @token_required
 def delete_blog(current_user, blog_id):
-    if current_user.role != 'admin':
-        return jsonify({'message': 'Access forbidden: Admins only'}), 403
-        
     blog = Blog.query.get_or_404(blog_id)
+    if current_user.role != 'admin' and blog.author_id != current_user.id:
+        return jsonify({'message': 'Not authorized'}), 403
     
     # Delete cover image if local
     if blog.cover_image and blog.cover_image.startswith('/static/uploads/'):
