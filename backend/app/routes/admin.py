@@ -156,25 +156,12 @@ def delete_user(current_user, user_id):
         blog_ids = [b.id for b in user.blogs]
 
         if blog_ids:
-            # Nullify parent_id on replies to comments on user's blogs
-            db.session.execute(
-                text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE blog_id IN :bids) AS tmp)"),
-                {'bids': tuple(blog_ids)}
-            )
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS=0"))
             Comment.query.filter(Comment.blog_id.in_(blog_ids)).delete(synchronize_session=False)
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS=1"))
             Like.query.filter(Like.blog_id.in_(blog_ids)).delete(synchronize_session=False)
             Rating.query.filter(Rating.blog_id.in_(blog_ids)).delete(synchronize_session=False)
             SavedBlog.query.filter(SavedBlog.blog_id.in_(blog_ids)).delete(synchronize_session=False)
-
-        # Nullify replies to user's comments
-        db.session.execute(
-            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE user_id = :uid) AS tmp)"),
-            {'uid': user_id}
-        )
-
-        Message.query.filter(Message.reply_to_id.in_(
-            db.session.query(Message.id).filter(Message.sender_id == user_id)
-        )).update({'reply_to_id': None}, synchronize_session=False)
 
         ActivityLog.query.filter_by(user_id=user_id).update({'user_id': None}, synchronize_session=False)
 
@@ -190,8 +177,10 @@ def delete_user(current_user, user_id):
             db.session.delete(room)
 
         ChatRoomMember.query.filter_by(user_id=user_id).delete()
-        Message.query.filter_by(sender_id=user_id).delete()
-        Comment.query.filter_by(user_id=user_id).delete()
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS=0"))
+        Message.query.filter_by(sender_id=user_id).delete(synchronize_session=False)
+        Comment.query.filter_by(user_id=user_id).delete(synchronize_session=False)
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS=1"))
         DevRoom.query.filter_by(creator_id=user_id).delete()
         Blog.query.filter_by(author_id=user_id).delete()
 

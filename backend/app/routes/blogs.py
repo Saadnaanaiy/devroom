@@ -219,14 +219,10 @@ def delete_blog(current_user, blog_id):
                 except Exception:
                     pass
 
-        # Nullify parent_id on replies to any comment being deleted
-        db.session.execute(
-            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE blog_id = :bid) AS tmp)"),
-            {'bid': blog_id}
-        )
-
-        # Delete related records
+        # Delete all comments for this blog (disable FK checks for self-referential FK)
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS=0"))
         Comment.query.filter_by(blog_id=blog_id).delete()
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS=1"))
         Like.query.filter_by(blog_id=blog_id).delete()
         Rating.query.filter_by(blog_id=blog_id).delete()
         SavedBlog.query.filter_by(blog_id=blog_id).delete()
