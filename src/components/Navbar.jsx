@@ -17,6 +17,7 @@ import {
   Heart,
   UserCircle
 } from 'lucide-react';
+import { getImageUrl } from '../utils/imageUrl';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -123,7 +124,7 @@ const Navbar = () => {
             <div className="p-4 border-b border-gray-200/30 dark:border-gray-800/50">
               <div className="flex items-center gap-3">
                 {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.username} className="h-10 w-10 rounded-xl object-cover ring-2 ring-gray-900/20" />
+                  <img src={getImageUrl(user.avatar_url)} alt={user.username} className="h-10 w-10 rounded-xl object-cover ring-2 ring-gray-900/20" loading="lazy" />
                 ) : (
                   <div className="h-10 w-10 rounded-xl bg-black text-white font-bold flex items-center justify-center text-sm uppercase">
                     {user?.first_name?.charAt(0) || user?.username?.charAt(0)}

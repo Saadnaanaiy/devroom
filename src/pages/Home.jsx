@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import ParticleBackground from '../components/ParticleBackground';
+const ParticleBackground = React.lazy(() => import('../components/ParticleBackground'));
 import {
   Search, Star, MessageSquare, Clock, User, ArrowRight, BookOpen,
   Sparkles, Code, PenTool,
   Zap, Globe, Database, Shield, Box
 } from 'lucide-react';
+import { getImageUrl } from '../utils/imageUrl';
 
 const categoryIcons = {
   'Frontend': Code,
@@ -57,7 +58,7 @@ const Home = () => {
     <div className="flex-1 overflow-y-auto w-full">
       {/* ===== HERO ===== */}
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
-        <ParticleBackground />
+        <Suspense fallback={null}><ParticleBackground /></Suspense>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-50 dark:to-gray-950 pointer-events-none" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center animate-fade-in">
@@ -148,9 +149,10 @@ const Home = () => {
                   <div className="relative h-48 overflow-hidden bg-gray-100 dark:bg-gray-900">
                     {blog.cover_image ? (
                       <img
-                        src={blog.cover_image}
-                        alt={blog.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      src={getImageUrl(blog.cover_image)}
+                      alt={blog.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-900/5 to-gray-700/5 flex items-center justify-center">

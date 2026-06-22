@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getImageUrl } from '../utils/imageUrl';
 
 
 const navItems = [
@@ -188,9 +189,10 @@ const AppSidebar = ({ defaultCollapsed }) => {
           >
             {user?.avatar_url ? (
               <img
-                src={user.avatar_url}
+                src={getImageUrl(user.avatar_url)}
                 alt={user?.username}
                 className="h-8 w-8 rounded-lg object-cover ring-2 ring-gray-900/15 dark:ring-white/15 shrink-0"
+                loading="lazy"
               />
             ) : (
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-200 dark:to-gray-400 text-white dark:text-gray-900 font-bold flex items-center justify-center text-sm uppercase ring-2 ring-gray-900/15 dark:ring-white/15 shrink-0 shadow-sm">

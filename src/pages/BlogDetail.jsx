@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { getImageUrl } from '../utils/imageUrl';
 import { 
   Heart, 
   Bookmark, 
@@ -233,9 +234,10 @@ const BlogDetail = () => {
         <div className="flex gap-3 items-start group">
           {comment.avatar_url ? (
             <img 
-              src={comment.avatar_url} 
+              src={getImageUrl(comment.avatar_url)} 
               alt={comment.username} 
               className="h-8 w-8 rounded-xl object-cover mt-0.5 shrink-0"
+              loading="lazy"
             />
           ) : (
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-400 text-white dark:text-gray-900 font-bold flex items-center justify-center text-xs uppercase shrink-0 mt-0.5 shadow-sm">
@@ -342,7 +344,7 @@ const BlogDetail = () => {
           {/* Cover image header */}
           {blog.cover_image && (
             <div className="h-64 md:h-80 overflow-hidden bg-gray-100 dark:bg-gray-900 border-b border-gray-200/30 dark:border-gray-800/50">
-              <img src={blog.cover_image} alt={blog.title} className="w-full h-full object-cover" />
+              <img src={getImageUrl(blog.cover_image)} alt={blog.title} className="w-full h-full object-cover" loading="lazy" />
             </div>
           )}
 
@@ -536,9 +538,10 @@ const BlogDetail = () => {
               <form onSubmit={(e) => handlePostComment(e)} className="flex items-start gap-3">
                 {user?.avatar_url ? (
                   <img 
-                    src={user.avatar_url} 
+                    src={getImageUrl(user.avatar_url)} 
                     alt={user.username} 
                     className="h-8 w-8 rounded-lg object-cover mt-1"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="h-8 w-8 rounded-lg bg-gray-900 text-white font-bold flex items-center justify-center text-xs uppercase mt-1">

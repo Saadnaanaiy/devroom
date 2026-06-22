@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useSocket } from '../context/SocketContext';
 import { PenSquare, Eye, UploadCloud, Edit, Trash2, Plus, Check, BookOpen, X, AlertCircle, Users, MessageSquare, Hash, Code, Activity, ExternalLink, GitBranch, Globe, Calendar, LogIn, UserPlus, MessageCircle, Layout, TrendingUp, BarChart3, Clock, Save, UserCheck, UserX, Shield, ShieldOff } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { getImageUrl } from '../utils/imageUrl';
 import AdminConsole from './AdminConsole';
 
 const COLORS = ['#737373', '#a3a3a3', '#525252', '#404040', '#808080', '#595959'];
@@ -362,7 +363,7 @@ const AdminBlogs = () => {
             {recentUsers.map((u) => (
               <div key={u.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50">
                 {u.avatar_url ? (
-                  <img src={u.avatar_url} alt={u.username} className="h-7 w-7 rounded-lg object-cover" />
+                  <img src={getImageUrl(u.avatar_url)} alt={u.username} className="h-7 w-7 rounded-lg object-cover" loading="lazy" />
                 ) : (
                   <div className="h-7 w-7 rounded-lg bg-gray-900 text-white font-bold flex items-center justify-center text-[10px] uppercase">{u.first_name?.charAt(0)}</div>
                 )}
@@ -423,7 +424,7 @@ const AdminBlogs = () => {
         <div key={u.id} className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-900/30">
           <div className="flex items-center gap-3 min-w-0">
             {u.avatar_url ? (
-              <img src={u.avatar_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
+              <img src={getImageUrl(u.avatar_url)} alt="" className="h-8 w-8 rounded-lg object-cover" loading="lazy" />
             ) : (
               <div className="h-8 w-8 rounded-lg bg-gray-900 text-white font-bold flex items-center justify-center text-xs uppercase">{u.first_name?.charAt(0)}</div>
             )}

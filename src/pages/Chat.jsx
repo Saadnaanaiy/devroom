@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { getImageUrl } from '../utils/imageUrl';
 
 const Chat = () => {
   const { user, logout } = useAuth();
@@ -447,13 +448,7 @@ const Chat = () => {
     return { language, code: codeLines.join('\n') };
   };
 
-  // Normalize URLs coming from backend (serve absolute URLs for local static files)
-  const normalizeUrl = (url) => {
-    if (!url) return url;
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
-    if (url.startsWith('/')) return window.location.origin + url;
-    return url;
-  };
+  const normalizeUrl = (url) => getImageUrl(url);
 
   // Active room typing users
   const roomTypingUsers = typingStatus[activeRoom?.id]

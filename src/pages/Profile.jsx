@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Phone, Upload, Save, AtSign, Check, X, Edit2, Loader2, AlertCircle } from 'lucide-react';
+import { getImageUrl } from '../utils/imageUrl';
 
 const Profile = () => {
   const { user, updateAvatar, updateProfile } = useAuth();
@@ -74,9 +75,10 @@ const Profile = () => {
             <div className="relative group mb-4">
               {user?.avatar_url ? (
                 <img
-                  src={user.avatar_url}
+                  src={getImageUrl(user.avatar_url)}
                   alt={user?.username}
                   className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover ring-4 ring-gray-900/20"
+                  loading="lazy"
                 />
               ) : (
                 <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-black text-white font-bold flex items-center justify-center text-2xl sm:text-3xl uppercase ring-4 ring-gray-900/20">

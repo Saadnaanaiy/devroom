@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Bookmark, Star, MessageSquare, Clock, User, ArrowRight, BookOpen } from 'lucide-react';
+import { getImageUrl } from '../utils/imageUrl';
 
 const SavedBlogs = () => {
   const [savedBlogs, setSavedBlogs] = useState([]);
@@ -52,9 +53,10 @@ const SavedBlogs = () => {
                 <div className="relative h-48 overflow-hidden bg-gray-100 dark:bg-gray-900">
                   {blog.cover_image ? (
                     <img 
-                      src={blog.cover_image} 
+                      src={getImageUrl(blog.cover_image)} 
                       alt={blog.title} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-900/10 to-gray-700/10 flex items-center justify-center text-gray-900 dark:text-gray-100">

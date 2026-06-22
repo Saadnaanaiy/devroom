@@ -1,24 +1,24 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 
-// Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import VerifyEmail from './pages/VerifyEmail';
-import Chat from './pages/Chat';
-import Blogs from './pages/Blogs';
-import BlogDetail from './pages/BlogDetail';
-import SavedBlogs from './pages/SavedBlogs';
-import LikedBlogs from './pages/LikedBlogs';
-import Home from './pages/Home';
-import AdminBlogs from './pages/AdminBlogs';
-import Profile from './pages/Profile';
-import DevRooms from './pages/DevRooms';
-import WriteBlog from './pages/WriteBlog';
+// Lazy-loaded pages
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
+const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
+const Chat = React.lazy(() => import('./pages/Chat'));
+const Blogs = React.lazy(() => import('./pages/Blogs'));
+const BlogDetail = React.lazy(() => import('./pages/BlogDetail'));
+const SavedBlogs = React.lazy(() => import('./pages/SavedBlogs'));
+const LikedBlogs = React.lazy(() => import('./pages/LikedBlogs'));
+const Home = React.lazy(() => import('./pages/Home'));
+const AdminBlogs = React.lazy(() => import('./pages/AdminBlogs'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const DevRooms = React.lazy(() => import('./pages/DevRooms'));
+const WriteBlog = React.lazy(() => import('./pages/WriteBlog'));
 
 // Components
 import AppSidebar from './components/AppSidebar';
@@ -76,6 +76,11 @@ function App() {
       <div className="flex-1 flex min-h-0 relative">
         {isAuthenticated && <AppSidebar defaultCollapsed={isChatPage} />}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <Suspense fallback={
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-900 border-t-transparent"></div>
+            </div>
+          }>
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" replace />} />
@@ -101,6 +106,7 @@ function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </div>
       </div>
     </div>

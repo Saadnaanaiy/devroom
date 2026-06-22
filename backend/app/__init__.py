@@ -41,7 +41,10 @@ def create_app():
     app.config['BASE_DIR'] = BASE_DIR
     
     # Configure CORS — allow frontend origins (comma-separated in env)
-    CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
+    CORS(app, resources={
+        r"/api/*": {"origins": cors_origins},
+        r"/static/*": {"origins": cors_origins}
+    }, supports_credentials=True)
     app.config['FRONTEND_URL'] = Config.FRONTEND_URL
     
     # Security headers on all responses
