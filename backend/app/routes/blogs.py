@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from sqlalchemy import text
 from backend.app.models import db, Blog, Comment, Like, Rating, SavedBlog, ActivityLog
 from backend.app.routes.auth import token_required
 from backend.app.security import rate_limit, validate_length
@@ -207,30 +208,35 @@ def delete_blog(current_user, blog_id):
     blog = Blog.query.get_or_404(blog_id)
     if current_user.role != 'admin' and blog.author_id != current_user.id:
         return jsonify({'message': 'Not authorized'}), 403
-    
-    # Delete cover image if local
-    if blog.cover_image and blog.cover_image.startswith('/static/uploads/'):
-        file_path = os.path.join(current_app.config['BASE_DIR'], blog.cover_image.lstrip('/'))
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except Exception:
-                pass
 
-    # Orphan comment replies before deleting
-    Comment.query.filter(Comment.parent_id.in_(
-        db.session.query(Comment.id).filter(Comment.blog_id == blog_id)
-    )).update({'parent_id': None}, synchronize_session=False)
+    try:
+        # Delete cover image if local
+        if blog.cover_image and blog.cover_image.startswith('/static/uploads/'):
+            file_path = os.path.join(current_app.config['BASE_DIR'], blog.cover_image.lstrip('/'))
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception:
+                    pass
 
-    # Delete related records to avoid FK violations
-    Comment.query.filter_by(blog_id=blog_id).delete()
-    Like.query.filter_by(blog_id=blog_id).delete()
-    Rating.query.filter_by(blog_id=blog_id).delete()
-    SavedBlog.query.filter_by(blog_id=blog_id).delete()
-                
-    db.session.delete(blog)
-    db.session.commit()
-    return jsonify({'message': 'Blog deleted successfully'}), 200
+        # Nullify parent_id on replies to any comment being deleted
+        db.session.execute(
+            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM comments WHERE blog_id = :bid)"),
+            {'bid': blog_id}
+        )
+
+        # Delete related records
+        Comment.query.filter_by(blog_id=blog_id).delete()
+        Like.query.filter_by(blog_id=blog_id).delete()
+        Rating.query.filter_by(blog_id=blog_id).delete()
+        SavedBlog.query.filter_by(blog_id=blog_id).delete()
+
+        db.session.delete(blog)
+        db.session.commit()
+        return jsonify({'message': 'Blog deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
 
 @blogs_bp.route('/<int:blog_id>/like', methods=['POST'])
 @token_required

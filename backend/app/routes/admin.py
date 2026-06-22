@@ -151,53 +151,53 @@ def delete_user(current_user, user_id):
         return jsonify({'message': 'Admin only'}), 403
     if user_id == current_user.id:
         return jsonify({'message': 'Cannot delete yourself'}), 400
-    user = User.query.get_or_404(user_id)
-    blog_ids = [b.id for b in user.blogs]
+    try:
+        user = User.query.get_or_404(user_id)
+        blog_ids = [b.id for b in user.blogs]
 
-    # Delete comments on user's blogs (by any user)
-    if blog_ids:
-        Comment.query.filter(Comment.blog_id.in_(blog_ids)).delete(synchronize_session=False)
+        if blog_ids:
+            # Nullify parent_id on replies to comments on user's blogs
+            db.session.execute(
+                text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM comments WHERE blog_id IN :bids)"),
+                {'bids': tuple(blog_ids)}
+            )
+            Comment.query.filter(Comment.blog_id.in_(blog_ids)).delete(synchronize_session=False)
+            Like.query.filter(Like.blog_id.in_(blog_ids)).delete(synchronize_session=False)
+            Rating.query.filter(Rating.blog_id.in_(blog_ids)).delete(synchronize_session=False)
+            SavedBlog.query.filter(SavedBlog.blog_id.in_(blog_ids)).delete(synchronize_session=False)
 
-    # Delete likes/ratings/saves on user's blogs
-    if blog_ids:
-        Like.query.filter(Like.blog_id.in_(blog_ids)).delete(synchronize_session=False)
-        Rating.query.filter(Rating.blog_id.in_(blog_ids)).delete(synchronize_session=False)
-        SavedBlog.query.filter(SavedBlog.blog_id.in_(blog_ids)).delete(synchronize_session=False)
+        # Nullify replies to user's comments
+        db.session.execute(
+            text("UPDATE comments SET parent_id = NULL WHERE parent_id IN (SELECT id FROM comments WHERE user_id = :uid)"),
+            {'uid': user_id}
+        )
 
-    # Orphan comment/message replies to user's content before deleting
-    Comment.query.filter(Comment.parent_id.in_(
-        db.session.query(Comment.id).filter(Comment.user_id == user_id)
-    )).update({'parent_id': None}, synchronize_session=False)
+        Message.query.filter(Message.reply_to_id.in_(
+            db.session.query(Message.id).filter(Message.sender_id == user_id)
+        )).update({'reply_to_id': None}, synchronize_session=False)
 
-    Message.query.filter(Message.reply_to_id.in_(
-        db.session.query(Message.id).filter(Message.sender_id == user_id)
-    )).update({'reply_to_id': None}, synchronize_session=False)
+        ActivityLog.query.filter_by(user_id=user_id).update({'user_id': None}, synchronize_session=False)
 
-    # Orphan activity log entries
-    ActivityLog.query.filter_by(user_id=user_id).update({'user_id': None}, synchronize_session=False)
+        Like.query.filter_by(user_id=user_id).delete()
+        Rating.query.filter_by(user_id=user_id).delete()
+        SavedBlog.query.filter_by(user_id=user_id).delete()
 
-    # Delete user's own activity
-    Like.query.filter_by(user_id=user_id).delete()
-    Rating.query.filter_by(user_id=user_id).delete()
-    SavedBlog.query.filter_by(user_id=user_id).delete()
+        dm_rooms = ChatRoom.query.join(ChatRoomMember).filter(
+            ChatRoomMember.user_id == user_id,
+            ChatRoom.type == 'direct'
+        ).all()
+        for room in dm_rooms:
+            db.session.delete(room)
 
-    # Delete DM rooms involving this user (cascade removes memberships and messages)
-    dm_rooms = ChatRoom.query.join(ChatRoomMember).filter(
-        ChatRoomMember.user_id == user_id,
-        ChatRoom.type == 'direct'
-    ).all()
-    for room in dm_rooms:
-        db.session.delete(room)
+        ChatRoomMember.query.filter_by(user_id=user_id).delete()
+        Message.query.filter_by(sender_id=user_id).delete()
+        Comment.query.filter_by(user_id=user_id).delete()
+        DevRoom.query.filter_by(creator_id=user_id).delete()
+        Blog.query.filter_by(author_id=user_id).delete()
 
-    # Remove user from remaining room memberships (channels)
-    ChatRoomMember.query.filter_by(user_id=user_id).delete()
-    Message.query.filter_by(sender_id=user_id).delete()
-    Comment.query.filter_by(user_id=user_id).delete()
-    DevRoom.query.filter_by(creator_id=user_id).delete()
-
-    # Delete user's blogs
-    Blog.query.filter_by(author_id=user_id).delete()
-
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'User deleted'}), 200
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'message': 'User deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
