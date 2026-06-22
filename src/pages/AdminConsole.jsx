@@ -108,6 +108,7 @@ const AdminConsole = () => {
   const [theme, setTheme] = useState('green');
   const outputRef = useRef(null);
   const inputRef = useRef(null);
+  const editInputRef = useRef(null);
 
   const T = THEMES[theme] || THEMES.green;
 
@@ -634,6 +635,7 @@ const AdminConsole = () => {
           setEditFields((prev) => ({ ...prev, [currentField.key]: val }));
         }
         const nextIdx = editIdx + 1;
+        if (editInputRef.current) editInputRef.current.value = '';
         if (nextIdx >= editKeys.length) {
           handleSaveEdit();
         } else {
@@ -713,7 +715,7 @@ const AdminConsole = () => {
           <div className="flex items-center px-4 py-3 gap-2">
             <span className={`font-mono text-[13px] ${T.inputPrompt} shrink-0`}>{'>>'}</span>
             <input
-              ref={inputRef}
+              ref={editInputRef}
               type="text"
               className={`flex-1 bg-transparent border-none outline-none font-mono text-[13px] ${T.inputText}`}
               placeholder={`Enter value for ${editKeys[editIdx]?.label || ''}...`}
