@@ -180,16 +180,27 @@ const AdminConsole = () => {
     try {
       const res = await axios.get('/api/admin/stats');
       const s = res.data.stats;
-      addLines([
-        `Total Users:     ${s.total_users}`,
-        `Dev Rooms:       ${s.total_dev_rooms}`,
-        `Messages:        ${s.total_messages}`,
-        `Channels:        ${s.total_channels}`,
-      ], 'text');
+      const items = [
+        { label: 'Users', value: s.total_users, type: 'success' },
+        { label: 'Dev Rooms', value: s.total_dev_rooms, type: 'system' },
+        { label: 'Messages', value: s.total_messages, type: 'input' },
+        { label: 'Channels', value: s.total_channels, type: 'live' },
+      ];
+      const maxVal = Math.max(...items.map((i) => i.value), 1);
+      const barLen = 24;
+      addLine('\u2500'.repeat(40), 'system');
+      const lines = items.map(({ label, value, type }) => {
+        const filled = Math.round((value / maxVal) * barLen);
+        const empty = barLen - filled;
+        const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(empty);
+        const pct = Math.round((value / maxVal) * 100);
+        return { text: `  ${label.padEnd(12)} ${String(value).padStart(6)}  ${bar}  ${pct}%`, type };
+      });
+      lines.forEach((l) => addLine(l.text, l.type));
     } catch (err) {
       addLine(`Error: ${err.response?.data?.message || err.message}`, 'error');
     }
-  }, [addLine, addLines]);
+  }, [addLine]);
 
   const handleUsers = useCallback(async () => {
     const data = await fetchUsers();
