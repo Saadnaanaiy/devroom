@@ -58,8 +58,10 @@ def register():
     if is_multipart:
         data = request.form
         avatar_file = request.files.get('avatar')
+        if not data:
+            data = request.get_json(silent=True) or {}
     else:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         avatar_file = None
         
     if not data:
@@ -73,8 +75,9 @@ def register():
     phone = (data.get('phone') or '').strip()
     admin_key = data.get('admin_key', '')
     
-    if not all([username, email, password, first_name, last_name]):
-        return jsonify({'message': 'Missing required fields'}), 400
+    missing = [f for f, v in [('username', username), ('email', email), ('password', password), ('first_name', first_name), ('last_name', last_name)] if not v]
+    if missing:
+        return jsonify({'message': f'Missing required fields: {", ".join(missing)}', 'missing': missing}), 400
     
     val_error = validate_email(email)
     if val_error:

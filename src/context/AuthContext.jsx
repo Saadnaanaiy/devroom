@@ -70,9 +70,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (formData) => {
     try {
-      const response = await axios.post('/api/auth/register', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await axios.post('/api/auth/register', formData);
       return response.data;
     } catch (error) {
       throw error.response?.data?.message || "Registration failed.";
@@ -109,9 +107,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      const response = await axios.post('/api/auth/upload-avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await axios.post('/api/auth/upload-avatar', formData);
       setUser(response.data.user);
       return response.data.avatar_url;
     } catch (error) {

@@ -159,9 +159,7 @@ const Register = () => {
     }
 
     try {
-      const res = await axios.post('/api/auth/register', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await axios.post('/api/auth/register', formData);
       navigate('/login', { state: { verifyEmail: res.data.user?.email || email.trim() } });
     } catch (err) {
       const msg = err.response?.data?.message || "Registration failed. Try again.";

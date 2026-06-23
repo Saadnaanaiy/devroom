@@ -102,6 +102,7 @@ const AdminConsole = () => {
   const [input, setInput] = useState('');
   const [editing, setEditing] = useState(null);
   const [editFields, setEditFields] = useState({});
+  const editFieldsRef = useRef({});
   const [editStep, setEditStep] = useState(0);
   const [editKeys, setEditKeys] = useState([]);
   const [editIdx, setEditIdx] = useState(0);
@@ -303,7 +304,9 @@ const AdminConsole = () => {
     ];
     setEditKeys(fields);
     setEditIdx(0);
-    setEditFields(fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {}));
+    const initFields = fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {});
+    editFieldsRef.current = initFields;
+    setEditFields(initFields);
     setEditing({ type: 'user', id: Number(id), fields, total: fields.length });
     setEditStep(1);
     addLine(`Editing User #${id}. Enter new values or press Enter to keep current.`, 'system');
@@ -363,7 +366,9 @@ const AdminConsole = () => {
       ];
       setEditKeys(fields);
       setEditIdx(0);
-      setEditFields(fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {}));
+      const initFields = fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {});
+    editFieldsRef.current = initFields;
+    setEditFields(initFields);
       setEditing({ type: 'room', id: Number(id), fields, total: fields.length });
       setEditStep(1);
       addLine(`Editing Room #${id}. Enter new values or press Enter to keep current.`, 'system');
@@ -427,7 +432,9 @@ const AdminConsole = () => {
       ];
       setEditKeys(fields);
       setEditIdx(0);
-      setEditFields(fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {}));
+      const initFields = fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {});
+    editFieldsRef.current = initFields;
+    setEditFields(initFields);
       setEditing({ type: 'blog', id: Number(id), fields, total: fields.length });
       setEditStep(1);
       addLine(`Editing Blog #${id}. Enter new values or press Enter to keep current.`, 'system');
@@ -462,7 +469,9 @@ const AdminConsole = () => {
     ];
     setEditKeys(fields);
     setEditIdx(0);
-    setEditFields(fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {}));
+    const initFields = fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {});
+    editFieldsRef.current = initFields;
+    setEditFields(initFields);
     setEditing({ type: 'user', id: null, fields, total: fields.length });
     setEditStep(1);
     addLine('Creating new user. Enter values (required fields):', 'system');
@@ -497,7 +506,9 @@ const AdminConsole = () => {
     ];
     setEditKeys(fields);
     setEditIdx(0);
-    setEditFields(fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {}));
+    const initFields = fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default }), {});
+    editFieldsRef.current = initFields;
+    setEditFields(initFields);
     setEditing({ type: 'room', id: null, fields, total: fields.length });
     setEditStep(1);
     addLine('Creating new dev room. Enter values:', 'system');
@@ -603,34 +614,34 @@ const AdminConsole = () => {
     }
   }, [addLine, addLines, theme, handleStats, handleUsers, handleUserDetail, handleUserVerify, handleUserDelete, handleUserEditStart, handleRooms, handleRoomDetail, handleRoomDelete, handleRoomEditStart, handleBlogs, handleBlogDetail, handleBlogDelete, handleBlogEditStart, handleChannels, handleMkuser, handleMkchannel, handleMkroom, handleClearmessages]);
 
-  const handleSaveEdit = useCallback(async () => {
-    const { type, id, fields } = editing;
+  const handleSaveEdit = useCallback(async (data) => {
+    const { type, id } = editing;
     try {
       if (type === 'user' && id === null) {
-        const res = await axios.post('/api/auth/register', editFields);
+        const res = await axios.post('/api/auth/register', data);
         const newUser = res.data.user || res.data;
         addLine(`User "${newUser.username}" created (ID: ${newUser.id}).`, 'success');
         const users = await fetchUsers();
         if (users) setAllData((prev) => ({ ...prev, users }));
       } else if (type === 'user') {
-        const res = await axios.put(`/api/admin/users/${id}`, editFields);
+        const res = await axios.put(`/api/admin/users/${id}`, data);
         setAllData((prev) => ({
           ...prev,
           users: prev.users.map((u) => (u.id === id ? res.data : u)),
         }));
         addLine(`User #${id} updated.`, 'success');
       } else if (type === 'room' && id === null) {
-        const res = await axios.post('/api/devrooms', editFields);
-        addLine(`Room "${editFields.name}" created (ID: ${res.data.room?.id || res.data.id}).`, 'success');
+        const res = await axios.post('/api/devrooms', data);
+        addLine(`Room "${data.name}" created (ID: ${res.data.room?.id || res.data.id}).`, 'success');
       } else if (type === 'room') {
-        const res = await axios.put(`/api/devrooms/${id}`, editFields);
+        const res = await axios.put(`/api/devrooms/${id}`, data);
         setAllData((prev) => ({
           ...prev,
           rooms: prev.rooms.map((r) => (r.id === id ? res.data : r)),
         }));
         addLine(`Room #${id} updated.`, 'success');
       } else if (type === 'blog') {
-        const res = await axios.put(`/api/blogs/${id}`, editFields);
+        const res = await axios.put(`/api/blogs/${id}`, data);
         setAllData((prev) => ({
           ...prev,
           blogs: prev.blogs.map((b) => (b.id === id ? res.data.blog : b)),
@@ -642,18 +653,20 @@ const AdminConsole = () => {
     }
     setEditing(null);
     setEditStep(0);
-  }, [editing, editFields, addLine, fetchUsers]);
+  }, [editing, addLine, fetchUsers]);
 
   const handleKeyDown = (e) => {
     if (editing) {
       if (e.key === 'Enter') {
         const currentField = editKeys[editIdx];
         const val = e.target.value.trim();
-        setEditFields((prev) => ({ ...prev, [currentField.key]: val }));
+        const accumulated = { ...editFieldsRef.current, [currentField.key]: val };
+        editFieldsRef.current = accumulated;
+        setEditFields(accumulated);
         const nextIdx = editIdx + 1;
         if (editInputRef.current) editInputRef.current.value = '';
         if (nextIdx >= editKeys.length) {
-          handleSaveEdit();
+          handleSaveEdit(accumulated);
         } else {
           setEditIdx(nextIdx);
           addLine(`  ${editKeys[nextIdx].label} [${editKeys[nextIdx].default}]:`, 'input');
